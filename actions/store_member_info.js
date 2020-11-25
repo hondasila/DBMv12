@@ -77,10 +77,10 @@ module.exports = {
 				dataType = "Image URL";
 				break;
 			case 17:
-				dataType = "Number";
+				dataType = "List of Roles";
 				break;
 			case 18:
-				dataType = "List of Roles";
+				dataType = "Number";
 				break;
 			case 19:
 				dataType = "Voice Channel";
@@ -308,7 +308,7 @@ module.exports = {
 				break;
 			case 16:
 				if(mem.user) {
-					result = mem.user.displayAvatarURL({ dynamic: true });
+					result = mem.user.displayAvatarURL({ dynamic: true, format: "png", size: 4096 });
 				}
 				break;
 			case 17:

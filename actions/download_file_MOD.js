@@ -3,7 +3,7 @@ module.exports = {
   section: 'File Stuff',
 
   subtitle (data) {
-    return `${data.url}`
+    return `From: ${data.url} to ${data.filePath}/${data.fileName || 'download'}.${data.fileFormat || 'txt'}`
   },
 
   fields: ['url', 'fileName', 'fileFormat', 'filePath'],
@@ -12,7 +12,7 @@ module.exports = {
     return `
 <div style="float: left;">
   Web URL:<br>
-  <input id="url" class="round" type="text" style="width: 522px" oninput="glob.onInput1(this)"><br>
+  <input id="url" class="round" type="text" style="width: 522px"><br>
 </div><br><br><br>
 <div style="float: left;">
   <div style="float: left; width: 60%;">
@@ -35,125 +35,33 @@ module.exports = {
 </p>`
   },
 
-  init () {
-    const { glob, document } = this
-
-    glob.onInput1 = function () {
-      const x = document.getElementById('url').value.replace(/(\/|\\)+$/, '').split('/')
-      const y = x[x.length - 1]
-
-      const arrayy = []
-      const regex = new RegExp(/\./, 'g')
-      let rE
-      while (rE = regex.exec(y)) {
-        arrayy.push(rE)
-      }
-
-      if (arrayy.length === 0 || !y.substring(arrayy[arrayy.length - 1].index + 1)) {
-        document.getElementById('fileName').placeholder = ''
-        document.getElementById('fileFormat').placeholder = ''
-      } else {
-        const fN = y.substring(0, arrayy[arrayy.length - 1].index)
-        const fF = y.substring(arrayy[arrayy.length - 1].index + 1)
-
-        document.getElementById('fileName').placeholder = fN
-        document.getElementById('fileFormat').placeholder = fF
-      }
-    }
-
-    glob.onInput1(document.getElementById('url'))
-  },
+  init () {},
 
   action (cache) {
     const data = cache.actions[cache.index]
 
-    const url = this.evalMessage(data.url, cache)
-    let fileName = this.evalMessage(data.fileName, cache)
-    let fileFormat = this.evalMessage(data.fileFormat, cache)
+    let url = this.evalMessage(data.url, cache)
+    const fileName = this.evalMessage(data.fileName, cache)
+    const fileFormat = this.evalMessage(data.fileFormat, cache)
     const filePath = this.evalMessage(data.filePath, cache)
-
-    if (!url) {
-      console.log(`Action: #${cache.index + 1} | Download File ERROR: Web URL has nothing`)
-      this.callNextAction(cache)
-      return
-    }
-
-    if (!fileName || !fileFormat) {
-      const x = url.replace(/(\/|\\)+$/, '').split('/')
-      const y = x[x.length - 1]
-
-      const arrayy = []
-      const regex = new RegExp(/\./, 'g')
-      let rE
-      while (rE = regex.exec(y)) {
-        arrayy.push(rE)
-      }
-
-      if (arrayy.length === 0 || !y.substring(arrayy[arrayy.length - 1].index + 1)) {
-        if (!fileName && !fileFormat) {
-          console.log(`Action: #${cache.index + 1} | Download File ERROR: File Name and File Format has nothing`)
-          this.callNextAction(cache)
-          return
-        } if (!fileName) {
-          console.log(`Action: #${cache.index + 1} | Download File ERROR: File Name has nothing`)
-          this.callNextAction(cache)
-          return
-        } if (!fileFormat) {
-          console.log(`Action: #${cache.index + 1} | Download File ERROR: File Format has nothing`)
-          this.callNextAction(cache)
-          return
-        }
-      } else {
-        const fN = y.substring(0, arrayy[arrayy.length - 1].index)
-        const fF = y.substring(arrayy[arrayy.length - 1].index + 1)
-
-        if (!fileName && !fileFormat) {
-          fileName = fN
-          fileFormat = fF
-        } else if (!fileName) {
-          fileName = fN
-        } else if (!fileFormat) {
-          fileFormat = fF
-        }
-      }
-    }
-
-    if (!filePath) {
-      console.log(`Action: #${cache.index + 1} | Download File ERROR: File Path has nothing`)
-      this.callNextAction(cache)
-      return
-    }
-
-    function gR (input) {
-      const illegalRe = /[/?<>\\:*|":]/g
-      // eslint-disable-next-line no-control-regex
-      const controlRe = /[\x00-\x1f\x80-\x9f]/g
-      const reservedRe = /^\.+$/
-      const windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i
-      const windowsTrailingRe = /[. ]+$/
-      const rG = input
-        .replace(illegalRe, '')
-        .replace(controlRe, '')
-        .replace(reservedRe, '')
-        .replace(windowsReservedRe, '')
-        .replace(windowsTrailingRe, '')
-      return rG
-    }
-    fileName = gR(fileName)
-    fileFormat = gR(fileFormat)
-
     const Mods = this.getMods()
-    const request = Mods.require('request')
-    const path = require('path')
+    const http = require('https')
     const fs = require('fs')
+    const path = `${filePath}/${fileName || 'download'}.${fileFormat || 'txt'}`
 
-    if (!fs.existsSync(filePath)) {
-      fs.mkdirSync(filePath)
+    if (!Mods.checkURL(url)) {
+      url = encodeURI(url)
     }
 
-    request.get(url).on('error', (err) => {
-      console.error(`Action: #${cache.index + 1} | Download File ERROR: Web URL not found...\n`, err)
-    }).pipe(fs.createWriteStream(path.resolve(filePath, `${fileName}.${fileFormat}`)))
+    if (!fs.existsSync(path)) {
+      fs.writeFileSync(path, '')
+    }
+
+    const ws = fs.createWriteStream(path)
+    ws.on('open', () => {
+      http.get(url, (res) => res.pipe(ws))
+    })
+
     this.callNextAction(cache)
   },
 

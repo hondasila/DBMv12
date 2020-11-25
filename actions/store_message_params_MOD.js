@@ -196,13 +196,13 @@ module.exports = {
     let result
     switch (infoType) {
       case 0:
-        result = msg.content.split(new RegExp(separator))[ParamN + 1] || undefined
+        result = msg.content.split(new RegExp(separator))[ParamN] || undefined
         break
       case 1:
         if (data.count) {
-          result = msg.content.split(new RegExp(separator, 'g')).slice(ParamN + 1).slice(0, count).join(new RegExp(separator, 'g')) || undefined
+          result = msg.content.split(new RegExp(separator, 'g')).slice(ParamN).slice(0, count).join(' ') || undefined
         } else {
-          result = msg.content.split(new RegExp(separator, 'g')).slice(ParamN + 1).join(new RegExp(separator, 'g')) || undefined
+          result = msg.content.split(new RegExp(separator, 'g')).slice(ParamN).join(' ') || undefined
         }
         break
       case 2:
